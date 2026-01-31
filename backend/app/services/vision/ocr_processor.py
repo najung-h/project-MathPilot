@@ -1,6 +1,7 @@
 """OCR Processor - Vision LLM 기반 OCR + LaTeX 변환"""
 
 from dataclasses import dataclass
+import re
 
 from app.services.llm.base import BaseLLMClient
 from app.services.vision.scene_detector import DetectedSlide
@@ -32,6 +33,7 @@ class OCRProcessor:
 3. 리스트는 - 또는 숫자로 표시
 4. 표가 있으면 마크다운 테이블로 변환
 5. 중요한 내용은 **굵게** 표시
+6. [중요] LaTeX 수식 작성 시 \\begin{array} 등의 환경을 과도하게 중첩하지 마시오. 단순하고 명확하게 작성할 것.
 
 출력 형식:
 ```markdown
@@ -75,13 +77,16 @@ $$
             system_prompt=self.SYSTEM_PROMPT,
         )
 
+        # 환각(반복) 패턴 정제
+        cleaned_response = self._clean_hallucinations(response)
+
         # LaTeX 수식 추출
-        latex_expressions = self._extract_latex(response)
+        latex_expressions = self._extract_latex(cleaned_response)
 
         return OCRResult(
             slide_number=slide.slide_number,
             raw_text=response,
-            structured_markdown=response,
+            structured_markdown=cleaned_response,
             latex_expressions=latex_expressions,
         )
 
@@ -106,6 +111,32 @@ $$
             results.append(result)
         return results
 
+    def _clean_hallucinations(self, text: str) -> str:
+        """
+        LLM 환각으로 인한 반복 텍스트/수식 제거
+        예: \begin{array}{c}가 5회 이상 반복되는 경우 등
+        """
+        # 1. 과도한 중첩 구조 제거 (\begin{array}{c}가 3회 이상 연속 중첩되면 삭제)
+        # 정규식: (\begin{array}{c}\s*){3,} -> 제거 또는 단순화
+        # 하지만 정규식으로는 중첩 괄호 처리가 어려우므로, 단순 반복 패턴만 잡음
+        
+        # 특정 키워드가 너무 많이 반복되면 해당 줄을 잘라냄
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            # \begin{array}가 한 줄에 3번 이상 나오거나, 전체적으로 너무 긴 줄은 의심
+            if line.count(r'\begin{array}') > 3:
+                continue
+            
+            # \begin{array}{c} 패턴의 무한 반복 감지
+            if len(line) > 500 and r'\begin{array}' in line:
+                 # 너무 긴 수식 줄은 환각일 가능성이 높으므로 스킵 (안전장치)
+                 continue
+                 
+            cleaned_lines.append(line)
+            
+        return '\n'.join(cleaned_lines)
+
     def _extract_latex(self, markdown_text: str) -> list[str]:
         """
         마크다운 텍스트에서 LaTeX 수식 추출
@@ -116,8 +147,6 @@ $$
         Returns:
             LaTeX 수식 목록
         """
-        import re
-
         # 블록 수식 추출 ($$...$$)
         block_pattern = r"\$\$(.*?)\$\$"
         block_matches = re.findall(block_pattern, markdown_text, re.DOTALL)

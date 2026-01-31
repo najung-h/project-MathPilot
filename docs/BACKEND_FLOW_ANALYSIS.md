@@ -83,7 +83,6 @@
 ### 🚧 향후 개선 과제 (To-Do / Improvements)
 1.  **Frontend 개발**: 현재 API만 존재하므로, 사용자 UI(React 등) 개발이 시급합니다.
 2.  **Persistence (DB 도입)**: `_task_store`를 Redis나 PostgreSQL로 교체하여 데이터 영속성을 확보해야 합니다.
-3.  **Timestamp 정교화**: `SceneDetector`에서 마지막 슬라이드의 종료 시간을 영상 전체 길이와 맞추는 로직 보완이 필요합니다.
 4.  **Error Handling**: Riva 연결 실패나 LLM 응답 지연 시의 재시도(Retry) 로직을 더 견고하게 다듬을 수 있습니다.
 
 ---

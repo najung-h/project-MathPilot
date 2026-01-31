@@ -62,6 +62,11 @@ class FrameExtractor:
         frames = []
         frame_count = 0
         saved_count = 0
+        
+        # 비디오 정보 로깅
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        duration_sec = total_frames / fps if fps > 0 else 0
+        print(f"[FrameExtractor] Start extracting. Total frames: {total_frames}, Duration: {duration_sec:.2f}s, Interval: {self.interval_sec}s")
 
         # 출력 디렉토리 생성
         if output_dir:
@@ -77,6 +82,12 @@ class FrameExtractor:
             if frame_count % frame_interval == 0:
                 timestamp = frame_count / fps
                 
+                # 진행 상황 로깅 (약 60초 분량 처리할 때마다 로그 출력)
+                log_step = int(60 / self.interval_sec * frame_interval) if self.interval_sec > 0 else frame_interval * 60
+                if log_step > 0 and frame_count % log_step == 0:
+                    progress = (timestamp / duration_sec * 100) if duration_sec > 0 else 0
+                    print(f"[FrameExtractor] Progress: {timestamp:.1f}s / {duration_sec:.1f}s ({progress:.1f}%)")
+
                 extracted_frame = ExtractedFrame(
                     frame_number=saved_count + 1,
                     timestamp_sec=timestamp,

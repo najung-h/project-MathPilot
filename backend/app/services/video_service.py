@@ -55,9 +55,14 @@ class VideoProcessingService:
             llm_client = get_llm_client(settings)
             
             # ==================== Phase 1: Pre-processing (병렬) ====================
+            # 비디오 길이 미리 파악 (타임스탬프 보정용)
+            extractor = AudioExtractor()
+            audio_info = await extractor.extract_audio(video_path)
+            video_duration = audio_info.duration_sec
+
             vision_task = asyncio.create_task(
                 VideoProcessingService._process_vision(
-                    task_id, task, video_path, frames_dir, slides_dir, llm_client
+                    task_id, task, video_path, frames_dir, slides_dir, llm_client, video_duration
                 )
             )
             audio_task = asyncio.create_task(
@@ -93,6 +98,7 @@ class VideoProcessingService:
         frames_dir: Path,
         slides_dir: Path,
         llm_client: Any,
+        video_duration: float | None = None,
     ) -> dict[str, Any]:
         """Vision Pipeline"""
         print(f"[{task_id}] Vision Pipeline Start")
@@ -105,7 +111,7 @@ class VideoProcessingService:
         
         # 2. Scene Detection
         detector = SceneDetector(ssim_threshold=settings.SSIM_THRESHOLD)
-        slides = await detector.detect_slides(frames)
+        slides = await detector.detect_slides(frames, video_duration=video_duration)
         task["progress"]["vision"] = 0.6
         
         # 3. OCR Processing

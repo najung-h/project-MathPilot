@@ -37,12 +37,14 @@ class SceneDetector:
     async def detect_slides(
         self,
         frames: list[ExtractedFrame],
+        video_duration: float | None = None,
     ) -> list[DetectedSlide]:
         """
         프레임 목록에서 고유 슬라이드 추출
 
         Args:
             frames: 추출된 프레임 목록
+            video_duration: 비디오 전체 길이 (마지막 슬라이드 종료 시간 보정용)
 
         Returns:
             고유 슬라이드 목록 (타임스탬프 포함)
@@ -52,27 +54,23 @@ class SceneDetector:
 
         slides = []
         prev_image_gray = None
-        current_slide_start = frames[0].timestamp_sec
         slide_counter = 1
 
-        # 첫 번째 프레임은 무조건 첫 슬라이드의 시작
-        # 그러나 실제 Scene Detection을 위해 루프 내에서 처리
-
         for i, frame in enumerate(frames):
-            # 현재 프레임 이미지 로드 (경로 또는 바이트에서)
+            # 현재 프레임 이미지 로드
             current_image = self._load_image(frame)
             if current_image is None:
                 continue
             
-            # 그레이스케일 변환 (SSIM 성능 향상)
+            # 그레이스케일 변환
             current_image_gray = cv2.cvtColor(current_image, cv2.COLOR_BGR2GRAY)
 
             if prev_image_gray is None:
-                # 첫 번째 프레임 처리
+                # 첫 번째 프레임 처리 (시작 시간은 0.0으로 강제 설정하여 싱크 맞춤)
                 slides.append(DetectedSlide(
                     slide_number=slide_counter,
-                    timestamp_start=frame.timestamp_sec,
-                    timestamp_end=frame.timestamp_sec, # 임시
+                    timestamp_start=0.0,
+                    timestamp_end=frame.timestamp_sec,
                     frame=frame,
                     ssim_score=None
                 ))
@@ -80,7 +78,6 @@ class SceneDetector:
                 continue
 
             # 이전 프레임과 SSIM 비교
-            # 이미지 크기가 다르면 리사이즈
             if prev_image_gray.shape != current_image_gray.shape:
                 current_image_gray = cv2.resize(current_image_gray, (prev_image_gray.shape[1], prev_image_gray.shape[0]))
 
@@ -96,17 +93,20 @@ class SceneDetector:
                 slides.append(DetectedSlide(
                     slide_number=slide_counter,
                     timestamp_start=frame.timestamp_sec,
-                    timestamp_end=frame.timestamp_sec, # 임시
+                    timestamp_end=frame.timestamp_sec,
                     frame=frame,
                     ssim_score=score
                 ))
                 
-                # 기준 이미지 업데이트 (새 슬라이드의 첫 프레임)
+                # 기준 이미지 업데이트
                 prev_image_gray = current_image_gray
             else:
                 # 유사도가 높음 -> 같은 슬라이드 유지
-                # 종료 시간만 계속 업데이트 (마지막 프레임까지)
                 slides[-1].timestamp_end = frame.timestamp_sec
+
+        # 마지막 슬라이드 종료 시간 보정 (영상 전체 길이 반영)
+        if slides and video_duration:
+            slides[-1].timestamp_end = max(slides[-1].timestamp_end, video_duration)
 
         return slides
 
