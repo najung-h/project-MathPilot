@@ -11,8 +11,8 @@ export function WelcomeHeader({ onStartClick }: WelcomeHeaderProps) {
     <header className="fixed top-0 w-full z-[100] bg-white/90 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-200">P</div>
-          <span className="text-2xl font-black tracking-tighter italic">MathPilot <span className="text-indigo-600">AI</span></span>
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-200">M</div>
+          <span className="text-2xl font-black tracking-tighter italic">MathPilot <span className="text-blue-600">AI</span></span>
         </div>
         
         <nav className="hidden lg:flex items-center gap-10 text-sm font-extrabold text-slate-500 uppercase tracking-widest">
