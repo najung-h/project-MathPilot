@@ -36,7 +36,6 @@ export function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const youtubePlayerRef = useRef<any>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   // YouTube video ID
@@ -75,17 +74,6 @@ export function VideoPlayer({
     
     console.log('SOS clicked at timestamp:', currentTimestamp);
     onSosClick?.(currentTimestamp);
-  };
-
-  const handlePlayPause = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
   };
 
   const handleFullscreen = () => {
@@ -160,8 +148,6 @@ export function VideoPlayer({
             ref={videoRef}
             className="w-full h-full object-contain"
             src={videoUrl}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
             controls
           />
           
