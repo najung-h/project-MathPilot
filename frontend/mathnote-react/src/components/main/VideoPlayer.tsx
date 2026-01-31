@@ -35,14 +35,45 @@ export function VideoPlayer({
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const youtubePlayerRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   
   // YouTube video ID
   const youtubeVideoId = youtubeUrl ? getYouTubeVideoId(youtubeUrl) : null;
 
+  // YouTube Player API 로드
+  useEffect(() => {
+    if (!youtubeVideoId) return;
+
+    // YouTube iframe API 스크립트 로드
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+
+    // API 로드 후 플레이어 초기화
+    (window as any).onYouTubeIframeAPIReady = () => {
+      youtubePlayerRef.current = new (window as any).YT.Player('youtube-player', {
+        events: {
+          onReady: () => console.log('YouTube player ready'),
+        },
+      });
+    };
+  }, [youtubeVideoId]);
+
   const handleSosClick = () => {
-    const currentTimestamp = videoRef.current?.currentTime || 0;
+    let currentTimestamp = 0;
+    
+    if (youtubePlayerRef.current && youtubePlayerRef.current.getCurrentTime) {
+      // YouTube 플레이어에서 시간 가져오기
+      currentTimestamp = youtubePlayerRef.current.getCurrentTime();
+    } else if (videoRef.current) {
+      // 로컬 비디오에서 시간 가져오기
+      currentTimestamp = videoRef.current.currentTime;
+    }
+    
+    console.log('SOS clicked at timestamp:', currentTimestamp);
     onSosClick?.(currentTimestamp);
   };
 
@@ -87,7 +118,8 @@ export function VideoPlayer({
         // YouTube iframe
         <>
           <iframe
-            className="w-full h-full"
+            id="youtube-player"
+            className="w-full h-full pointer-events-auto"
             src={`https://www.youtube.com/embed/${youtubeVideoId}?enablejsapi=1`}
             title={title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -95,10 +127,10 @@ export function VideoPlayer({
           />
           
           {/* Control Overlay for YouTube */}
-          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between z-[9999]">
+          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between z-[9999] pointer-events-auto">
             <button
               onClick={handleSosClick}
-              className="bg-red-500 hover:bg-red-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transform active:scale-95 transition"
+              className="bg-red-500 hover:bg-red-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold shadow-lg flex items-center gap-2 transform active:scale-95 transition pointer-events-auto"
             >
               <span className="text-xl">🤯</span>
               <span className="hidden sm:inline">잘 모르겠어요!</span>

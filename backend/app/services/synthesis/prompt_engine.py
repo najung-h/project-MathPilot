@@ -91,19 +91,20 @@ class PromptEngine:
         Returns:
             프롬프트 컨텍스트
         """
+        # SOS 구간의 구체적인 텍스트 사용
+        transcript_text = segment.sos_transcript or segment.audio_transcript
+        
         user_prompt = f"""학생이 아래 내용을 이해하기 어려워합니다.
 
 ## 슬라이드 내용
 
 {segment.ocr_content}
 
-## 강사 설명
+## 교수님이 말씨하신 부분
 
-{segment.audio_transcript}
+"{transcript_text}"
 
----
-
-이 부분에 대해 상세하게 설명해주세요.
+라고 교수님이 말씨하신 부분 잘 모르겠어요. 이 부분에 대해 상세하게 설명해주세요.
 """
 
         return PromptContext(

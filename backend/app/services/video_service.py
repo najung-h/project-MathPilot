@@ -75,15 +75,62 @@ class VideoProcessingService:
                 vision_task, audio_task
             )
 
-            # ==================== Phase 2: Synthesis ====================
+            # Vision, Audio 처리 완료 - synthesis는 별도 요청으로 처리
+            task["status"] = "ready_for_synthesis"  # 요약 준비 완료
+            task["vision_result"] = vision_result
+            task["audio_result"] = audio_result
+            task["progress"]["vision"] = 1.0
+            task["progress"]["audio"] = 1.0
+            print(f"[{task_id}] Vision and Audio processing completed. Ready for synthesis.")
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            task["status"] = "failed"
+            task["error_message"] = str(e)
+
+    @staticmethod
+    async def run_synthesis_task(
+        task_id: str,
+        task_store: dict[str, Any],
+    ) -> None:
+        """
+        Synthesis 단계만 실행 (강의 요약 생성)
+        """
+        settings = get_settings()
+        task = task_store[task_id]
+        storage_path = Path(settings.STORAGE_PATH)
+        
+        try:
+            if task["status"] != "ready_for_synthesis":
+                raise ValueError(f"Task {task_id} is not ready for synthesis. Current status: {task['status']}")
+            
+            task["status"] = "generating_summary"
+            
+            # 저장된 vision/audio 결과 가져오기
+            vision_result = task.get("vision_result")
+            audio_result = task.get("audio_result")
+            
+            if not vision_result or not audio_result:
+                raise ValueError("Vision or Audio result not found")
+            
+            # LLM 클라이언트 생성
+            llm_client = get_llm_client(settings)
+            
+            # slides_dir 경로
+            process_dir = storage_path / "processing" / task_id
+            slides_dir = process_dir / "slides"
+            
+            # Synthesis 실행
             await VideoProcessingService._process_synthesis(
                 task_id, task, vision_result, audio_result, llm_client, slides_dir, storage_path
             )
-
+            
             # 완료
             task["status"] = "completed"
             task["progress"]["synthesis"] = 1.0
-
+            print(f"[{task_id}] Synthesis completed.")
+            
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -159,15 +206,20 @@ class VideoProcessingService:
         # 1. Audio Extraction
         extractor = AudioExtractor()
         audio_path = process_dir / "audio.wav"
-        await extractor.extract_audio(video_path, output_path=audio_path)
+        audio_info = await extractor.extract_audio(video_path, output_path=audio_path)
+        print(f"[{task_id}] Audio extracted: {audio_path}, duration: {audio_info.duration_sec}s")
         task["progress"]["audio"] = 0.5
         
         # 2. STT Processing
         stt_processor = STTProcessor()
+        print(f"[{task_id}] NVIDIA_API_KEY present: {bool(settings.NVIDIA_API_KEY)}")
         if settings.NVIDIA_API_KEY:
+            print(f"[{task_id}] Starting STT with Nvidia API...")
             transcript_result = await stt_processor.transcribe(audio_path)
+            print(f"[{task_id}] STT completed: {len(transcript_result.segments)} segments, full_text length: {len(transcript_result.full_text)}")
         else:
             # API 키 없으면 빈 결과
+            print(f"[{task_id}] WARNING: No NVIDIA_API_KEY, returning empty transcript")
             from app.services.audio.stt_processor import TranscriptResult
             transcript_result = TranscriptResult("", [], "ko-KR", 0.0)
             
@@ -195,6 +247,14 @@ class VideoProcessingService:
         slides = vision_result["slides"]
         ocr_results = vision_result["ocr_results"]
         transcript_result = audio_result["transcript_result"]
+        
+        # 디버깅: STT 결과 확인
+        print(f"[{task_id}] Total transcript segments: {len(transcript_result.segments)}")
+        print(f"[{task_id}] Full transcript text length: {len(transcript_result.full_text)}")
+        if len(transcript_result.segments) > 0:
+            print(f"[{task_id}] First segment: start={transcript_result.segments[0].start}, end={transcript_result.segments[0].end}, text='{transcript_result.segments[0].text[:100]}'")
+        else:
+            print(f"[{task_id}] WARNING: No transcript segments found!")
         
         # 1. Segment Mapping
         mapper = SegmentMapper(padding_sec=settings.AUDIO_PADDING_SEC)
@@ -256,11 +316,11 @@ class VideoProcessingService:
                     "timestamp_start": s.timestamp_start,
                     "timestamp_end": s.timestamp_end,
                     "image_s3_key": s.image_s3_key,
-                    "ocr_content": s.summary_content, # 요약된 내용을 보여줌
-                    "audio_summary": "", # 요약에 포함됨
+                    "ocr_content": segments[i].ocr_content,  # OCR 원본 (수식)
+                    "audio_summary": s.summary_content,  # LLM 생성 요약
                     "sos_explanation": s.sos_explanation,
                 }
-                for s in note.slides
+                for i, s in enumerate(note.slides)
             ]
         }
         task["progress"]["synthesis"] = 1.0

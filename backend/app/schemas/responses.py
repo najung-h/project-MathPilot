@@ -21,7 +21,7 @@ class ProcessVideoResponse(BaseModel):
     """비디오 처리 시작 응답"""
 
     task_id: str = Field(..., description="작업 ID")
-    status: Literal["processing"] = Field(..., description="상태")
+    status: Literal["processing", "generating_summary"] = Field(..., description="상태")
     estimated_time_sec: int = Field(..., description="예상 처리 시간 (초)")
 
 
@@ -37,11 +37,14 @@ class TaskStatusResponse(BaseModel):
     """작업 상태 조회 응답"""
 
     task_id: str = Field(..., description="작업 ID")
-    status: Literal["pending", "uploaded", "processing", "completed", "failed"] = Field(
+    status: Literal["pending", "uploaded", "processing", "ready_for_synthesis", "generating_summary", "completed", "failed"] = Field(
         ..., description="작업 상태"
     )
     progress: ProgressDetail = Field(..., description="진행률 상세")
     error_message: str | None = Field(None, description="에러 메시지 (실패 시)")
+    filename: str | None = Field(None, description="파일명")
+    s3_key: str | None = Field(None, description="S3 키")
+    channel_name: str | None = Field(None, description="채널명")
 
 
 # ==================== Note Responses ====================

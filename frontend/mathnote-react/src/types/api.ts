@@ -39,11 +39,12 @@ export interface ProcessVideoResponse {
 // GET /videos/{task_id}/status Response
 export interface TaskStatusResponse {
   task_id: string;
-  status: 'pending' | 'uploaded' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'uploaded' | 'processing' | 'ready_for_synthesis' | 'generating_summary' | 'completed' | 'failed';
   progress?: TaskProgress;
   error_message?: string | null;
   filename?: string;
   s3_key?: string;
+  channel_name?: string;
 }
 
 export interface TaskProgress {

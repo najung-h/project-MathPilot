@@ -22,7 +22,7 @@ class VideoDownloader:
         self.download_dir = Path(download_dir)
         self.download_dir.mkdir(parents=True, exist_ok=True)
 
-    async def download_video(self, url: str, filename: str | None = None) -> Path:
+    async def download_video(self, url: str, filename: str | None = None) -> tuple[Path, dict]:
         """
         비디오 다운로드 실행
 
@@ -31,7 +31,8 @@ class VideoDownloader:
             filename: 저장할 파일명 (확장자 포함). None이면 yt-dlp 기본값 사용.
 
         Returns:
-            다운로드된 파일의 절대 경로
+            (다운로드된 파일의 절대 경로, 메타데이터 dict)
+            메타데이터: {"title": str, "channel": str | None, "uploader": str | None}
         """
         # yt-dlp 옵션 설정
         ydl_opts: dict[str, Any] = {
@@ -70,7 +71,7 @@ class VideoDownloader:
         except Exception as e:
             raise VideoProcessingError(f"Video download failed: {str(e)}")
 
-    def _run_download(self, url: str, ydl_opts: dict[str, Any]) -> Path:
+    def _run_download(self, url: str, ydl_opts: dict[str, Any]) -> tuple[Path, dict]:
         """yt-dlp 실행 (동기 함수)"""
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             # 메타데이터 추출
@@ -93,4 +94,11 @@ class VideoDownloader:
                      if mp4_path.exists():
                          downloaded_file = str(mp4_path)
 
-            return Path(downloaded_file)
+            # 메타데이터 추출
+            metadata = {
+                "title": info.get("title", "Unknown"),
+                "channel": info.get("channel"),
+                "uploader": info.get("uploader"),
+            }
+
+            return Path(downloaded_file), metadata

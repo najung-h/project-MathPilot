@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, File, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, File, UploadFile
 
 from app.api.deps import StorageClientDep, SettingsDep
 from app.schemas.requests import ProcessVideoRequest, VideoUrlRequest
@@ -38,14 +38,15 @@ async def download_and_process_url(
         storage_path = Path(settings.STORAGE_PATH)
         video_dir = storage_path / "videos" / task_id
         
-        # 1. 다운로드
+        # 1. 다운로드 (filename=None으로 YouTube 영상 제목 사용)
         downloader = VideoDownloader(download_dir=video_dir)
-        downloaded_path = await downloader.download_video(url, filename="original.mp4")
+        downloaded_path, metadata = await downloader.download_video(url, filename=None)
         
         # Task 정보 업데이트
         task["status"] = "processing" # 다운로드 완료 후 처리 중으로 변경
-        task["s3_key"] = f"videos/{task_id}/original.mp4"
-        task["filename"] = downloaded_path.name
+        task["s3_key"] = f"videos/{task_id}/{downloaded_path.name}"
+        task["filename"] = metadata.get("title") or downloaded_path.stem  # 영상 제목 또는 파일명
+        task["channel_name"] = metadata.get("channel") or metadata.get("uploader")  # 채널명
         
         print(f"[{task_id}] Download completed. Starting processing...")
 
@@ -194,6 +195,74 @@ async def process_video(
     )
 
 
+@router.post("/{task_id}/sos", status_code=204)
+async def add_sos_timestamp(
+    task_id: str,
+    timestamp: float = Body(..., embed=True),
+):
+    """SOS 타임스탬프 저장"""
+    from app.core.exceptions import task_not_found_exception
+
+    if task_id not in _task_store:
+        raise task_not_found_exception(task_id)
+
+    task = _task_store[task_id]
+    
+    # SOS timestamps 초기화
+    if "sos_timestamps" not in task:
+        task["sos_timestamps"] = []
+    
+    # 타임스탬프 추가
+    task["sos_timestamps"].append(timestamp)
+    print(f"[{task_id}] SOS timestamp added: {timestamp}. Total: {len(task['sos_timestamps'])}")
+    
+    return None
+
+
+@router.post("/{task_id}/generate-summary", response_model=ProcessVideoResponse)
+async def generate_summary(
+    task_id: str,
+    background_tasks: BackgroundTasks,
+):
+    """강의 요약 생성 (Synthesis 단계 실행)"""
+    from app.core.exceptions import task_not_found_exception
+    from app.services.video_service import VideoProcessingService
+
+    if task_id not in _task_store:
+        raise task_not_found_exception(task_id)
+
+    task = _task_store[task_id]
+    current_status = task["status"]
+    
+    print(f"[{task_id}] Generate summary request. Current status: {current_status}")
+    
+    # ready_for_synthesis 또는 completed 상태에서만 실행 가능
+    if current_status not in ["ready_for_synthesis", "completed"]:
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Task is not ready for synthesis. Current status: {current_status}"
+        )
+
+    # completed 상태면 ready_for_synthesis로 되돌림
+    if current_status == "completed":
+        task["status"] = "ready_for_synthesis"
+        print(f"[{task_id}] Resetting status from completed to ready_for_synthesis for re-synthesis")
+
+    # 백그라운드로 synthesis 실행
+    background_tasks.add_task(
+        VideoProcessingService.run_synthesis_task,
+        task_id=task_id,
+        task_store=_task_store,
+    )
+
+    return ProcessVideoResponse(
+        task_id=task_id,
+        status="generating_summary",
+        estimated_time_sec=60,
+    )
+
+
 @router.get("/{task_id}/status", response_model=TaskStatusResponse)
 async def get_task_status(task_id: str):
     """처리 상태 조회"""
@@ -209,4 +278,7 @@ async def get_task_status(task_id: str):
         status=task["status"],
         progress=ProgressDetail(**task["progress"]),
         error_message=task.get("error_message"),
+        filename=task.get("filename"),
+        s3_key=task.get("s3_key"),
+        channel_name=task.get("channel_name"),
     )

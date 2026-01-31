@@ -59,41 +59,63 @@ export function NotePreview({ noteData, isLoading = false, filename }: NotePrevi
               {title}
             </h1>
 
-            {slides && slides.length > 0 && (
-              <>
-                <h3 className="mt-6 text-blue-600">1. 핵심 수식 (OCR 추출)</h3>
+            {slides && slides.length > 0 && slides.map((slide, index) => (
+              <div key={slide.slide_number} className="mb-8">
+                <h2 className="text-xl font-bold text-slate-800 mt-8 mb-4 flex items-center gap-2">
+                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                    슬라이드 {slide.slide_number}
+                  </span>
+                  <span className="text-sm text-slate-500 font-normal">
+                    {Math.floor(slide.timestamp_start / 60)}:{String(Math.floor(slide.timestamp_start % 60)).padStart(2, '0')} - {Math.floor(slide.timestamp_end / 60)}:{String(Math.floor(slide.timestamp_end % 60)).padStart(2, '0')}
+                  </span>
+                </h2>
+
+                <h3 className="mt-6 text-blue-600 font-semibold">📊 핵심 수식 (OCR 추출)</h3>
                 <div className="bg-slate-50 p-4 rounded-xl my-4 text-left text-xs leading-relaxed">
                   <ReactMarkdown
                     remarkPlugins={[remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                   >
-                    {slides[0].ocr_content}
+                    {slide.ocr_content}
                   </ReactMarkdown>
                 </div>
 
-                <h3 className="mt-6">2. 강의 요약</h3>
-                <ul className="list-disc ml-5 space-y-2 text-slate-600 text-sm">
-                  <li>
-                    {slides[0]?.audio_summary}
-                  </li>
-                </ul>
+                <h3 className="mt-6 text-green-600 font-semibold">📝 강의 요약</h3>
+                <div className="text-slate-700 text-sm leading-relaxed bg-green-50 p-4 rounded-xl my-4">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {slide.audio_summary}
+                  </ReactMarkdown>
+                </div>
 
                 {/* SOS Explanation */}
-                {slides[0]?.sos_explanation && (
-                  <div className="mt-8 p-5 bg-amber-50 border border-amber-200 rounded-xl relative">
+                {slide.sos_explanation && (
+                  <div className="mt-6 p-5 bg-amber-50 border border-amber-200 rounded-xl relative">
                     <div className="absolute -top-3 left-4 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded">
                       💡 AI 심층 해설 (SOS)
                     </div>
                     <p className="text-xs font-semibold text-amber-800 mb-2">
-                      "SOS 구간 질문에 대한 해설입니다"
+                      "이해하기 어려웠던 부분에 대한 상세 해설입니다"
                     </p>
-                    <p className="text-sm text-amber-700 leading-relaxed">
-                      {slides[0].sos_explanation}
-                    </p>
+                    <div className="text-sm text-amber-700 leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                      >
+                        {slide.sos_explanation}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 )}
-              </>
-            )}
+
+                {/* 슬라이드 구분선 */}
+                {index < slides.length - 1 && (
+                  <hr className="my-8 border-slate-200" />
+                )}
+              </div>
+            ))}
           </>
         )}
       </div>

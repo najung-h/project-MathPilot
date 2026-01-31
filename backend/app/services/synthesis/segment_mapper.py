@@ -17,7 +17,7 @@ class MappedSegment:
     ocr_content: str  # 슬라이드 OCR 결과
     audio_transcript: str  # 해당 구간 음성 전사
     sos_requested: bool = False  # SOS 요청 여부
-
+    sos_transcript: str = ""  # SOS 구간의 구체적인 텍스트
 
 class SegmentMapper:
     """
@@ -68,10 +68,25 @@ class SegmentMapper:
             ]
             audio_transcript = " ".join(relevant_transcripts)
 
-            # SOS 요청 확인
-            sos_requested = any(
-                start <= ts <= end for ts in sos_timestamps
-            )
+            # SOS 요청 확인 및 SOS 구간 텍스트 추출
+            sos_requested = False
+            sos_transcript = ""
+            
+            for sos_ts in sos_timestamps:
+                if start <= sos_ts <= end:
+                    sos_requested = True
+                    # SOS 타임스탬프 주변 텍스트 추출 (더 넓은 패딩)
+                    sos_padding = 10.0  # SOS 구간 전후 10초
+                    sos_start = max(0, sos_ts - sos_padding)
+                    sos_end = sos_ts + sos_padding
+                    
+                    sos_texts = [
+                        seg.text
+                        for seg in transcript_segments
+                        if self._overlaps(seg.start, seg.end, sos_start, sos_end)
+                    ]
+                    sos_transcript = " ".join(sos_texts)
+                    break  # 첨 번째 SOS만 처리
 
             mapped_segments.append(
                 MappedSegment(
@@ -81,6 +96,7 @@ class SegmentMapper:
                     ocr_content=ocr_result.structured_markdown,
                     audio_transcript=audio_transcript,
                     sos_requested=sos_requested,
+                    sos_transcript=sos_transcript,
                 )
             )
 

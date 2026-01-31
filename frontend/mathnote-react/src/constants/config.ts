@@ -4,7 +4,7 @@
 
 export const APP_CONFIG = {
   // 앱 정보
-  APP_NAME: 'MathNote AI',
+  APP_NAME: 'MathPilot AI',
   APP_VERSION: '1.0.0',
   APP_DESCRIPTION: '강의 혁신 솔루션',
   

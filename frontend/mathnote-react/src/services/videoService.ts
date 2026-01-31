@@ -58,6 +58,26 @@ export const videoService = {
   },
 
   /**
+   * 강의 요약 생성 시작
+   */
+  generateSummary: async (taskId: string): Promise<ProcessVideoResponse> => {
+    const response = await apiClient.post<ProcessVideoResponse>(
+      `/api/v1/videos/${taskId}/generate-summary`
+    );
+    return response.data;
+  },
+
+  /**
+   * SOS 타임스탬프 추가
+   */
+  addSosTimestamp: async (taskId: string, timestamp: number): Promise<void> => {
+    await apiClient.post(
+      `/api/v1/videos/${taskId}/sos`,
+      { timestamp }
+    );
+  },
+
+  /**
    * 작업 상태 조회
    */
   getStatus: async (taskId: string): Promise<TaskStatusResponse> => {

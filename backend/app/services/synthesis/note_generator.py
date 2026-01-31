@@ -65,6 +65,10 @@ class NoteGenerator:
         generated_slides = []
 
         for segment, image_key in zip(segments, slide_image_keys):
+            # 디버깅: 세그먼트 정보 출력
+            print(f"[Slide {segment.slide_number}] OCR length: {len(segment.ocr_content)}, Audio transcript length: {len(segment.audio_transcript)}")
+            print(f"[Slide {segment.slide_number}] Audio transcript preview: {segment.audio_transcript[:200] if segment.audio_transcript else 'EMPTY'}...")
+            
             # 요약 생성
             summary_prompt = self.prompt_engine.build_summary_prompt(segment)
             summary_content = await self._generate_content(summary_prompt)

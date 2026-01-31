@@ -107,6 +107,16 @@ class STTProcessor:
                 start = alt.words[0].start_time / 1000.0
                 end = alt.words[-1].end_time / 1000.0
                 segments.append(TranscriptSegment(start, end, text_chunk.strip()))
+            else:
+                # words가 없으면 전체 구간을 하나의 세그먼트로 처리
+                print(f"[Riva Warning] No word timestamps for result, creating single segment")
+                # 임시로 0부터 시작하는 큰 세그먼트 생성
+                segments.append(TranscriptSegment(0.0, 999999.0, text_chunk.strip()))
+
+        # 세그먼트가 여전히 비어있으면 전체 텍스트로 하나의 큰 세그먼트 생성
+        if not segments and full_text.strip():
+            print(f"[Riva Warning] No segments created, creating one large segment for entire transcript")
+            segments.append(TranscriptSegment(0.0, 999999.0, full_text.strip()))
 
         duration = segments[-1].end if segments else 0.0
         

@@ -75,8 +75,12 @@ export function MainPage({
         // 처리 실패
         setIsPolling(false);
         setError(status.error_message || '처리 중 오류가 발생했습니다.');
+      } else if (status.status === 'ready_for_synthesis') {
+        // audio, vision 완료 - 폴링 중지 (사용자가 버튼 클릭할 때까지 대기)
+        setIsPolling(false);
+        console.log('Ready for synthesis. Waiting for user action.');
       }
-      // processing, pending, uploaded 상태면 계속 폴링
+      // processing, generating_summary, pending, uploaded 상태면 계속 폴링
     } catch (err) {
       console.error('Failed to poll status:', err);
       setError('상태 조회 중 오류가 발생했습니다.');
@@ -99,8 +103,16 @@ export function MainPage({
   }, [currentTaskId, isPolling, pollTaskStatus]);
 
   const handleSosClick = (timestamp: number) => {
-    setSosTimestamps((prev) => [...prev, timestamp]);
-    console.log('SOS clicked at:', timestamp, 'Total SOS:', sosTimestamps.length + 1);
+    const newTimestamps = [...sosTimestamps, timestamp];
+    setSosTimestamps(newTimestamps);
+    console.log('SOS clicked at:', timestamp, 'Total SOS:', newTimestamps.length);
+    
+    // 백엔드로 SOS timestamp 전송
+    if (currentTaskId) {
+      videoService.addSosTimestamp(currentTaskId, timestamp)
+        .then(() => console.log('SOS timestamp saved:', timestamp))
+        .catch(err => console.error('Failed to send SOS timestamp:', err));
+    }
   };
 
   const handleUploadSuccess = (taskId: string, uploadType: 'file' | 'url', fileExtension?: string, youtubeUrlParam?: string) => {
@@ -210,6 +222,7 @@ export function MainPage({
             <LectureInfo 
               taskId={currentTaskId}
               taskStatus={taskStatus}
+              onStartPolling={() => setIsPolling(true)}
             />
           </div>
 
