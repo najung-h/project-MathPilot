@@ -373,3 +373,5 @@ outputs/
 # 임시 처리 파일
 temp/
 tmp/
+storage/
+downloads_test/

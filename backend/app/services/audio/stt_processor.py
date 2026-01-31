@@ -1,107 +1,94 @@
-"""STT Processor - Whisper 기반 음성 인식"""
-
+import os
+import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-
+import riva.client
+from app.config import settings
 
 @dataclass
 class TranscriptSegment:
-    """전사 세그먼트"""
-
-    start: float  # 시작 시간 (초)
-    end: float  # 종료 시간 (초)
-    text: str  # 전사 텍스트
-
+    start: float
+    end: float
+    text: str
 
 @dataclass
 class TranscriptResult:
-    """전체 전사 결과"""
-
-    full_text: str  # 전체 텍스트
-    segments: list[TranscriptSegment]  # 타임스탬프별 세그먼트
-    language: str  # 감지된 언어
-    duration_sec: float  # 총 길이
-
+    full_text: str
+    segments: list[TranscriptSegment]
+    language: str
+    duration_sec: float
 
 class STTProcessor:
-    """
-    Whisper를 사용한 음성 인식 (Speech-to-Text)
+    def __init__(self):
+        # 1. NVIDIA Riva 서버 연결 (gRPC)
+        self.auth = riva.client.Auth(
+            None,
+            use_ssl=True,
+            uri="grpc.nvcf.nvidia.com:443",
+            metadata_args=[
+                ("function-id", "b702f636-f60c-4a3d-a6f4-f3568c13bd7d"), # Whisper Large v3
+                ("authorization", f"Bearer {settings.NVIDIA_API_KEY}")
+            ]
+        )
+        self.asr_service = riva.client.ASRService(self.auth)
+        
+        # 2. 모델 설정 (Offline 모드 + 타임스탬프 ON)
+        self.config = riva.client.RecognitionConfig(
+            encoding=riva.client.AudioEncoding.LINEAR_PCM,
+            sample_rate_hertz=16000,        # ★ 입력 오디오 16kHz 필수
+            language_code="ko-KR",          # 한국어
+            max_alternatives=1,
+            enable_automatic_punctuation=True,
+            verbatim_transcripts=False,
+            enable_word_time_offsets=True   # ★ 타임스탬프 필수 옵션
+        )
 
-    OpenAI Whisper 또는 faster-whisper 사용
-    """
+    async def transcribe(self, audio_path: str | Path) -> TranscriptResult:
+        audio_path = Path(audio_path)
+        
+        # 3. 파일 읽기 (바이너리)
+        with open(audio_path, "rb") as f:
+            audio_bytes = f.read()
 
-    def __init__(
-        self,
-        model_name: str = "base",
-        device: str = "auto",
-    ):
-        """
-        Args:
-            model_name: Whisper 모델 (tiny, base, small, medium, large)
-            device: 처리 디바이스 (cpu, cuda, auto)
-        """
-        self.model_name = model_name
-        self.device = device
-        self._model = None
+        print(f"[Riva] Sending {len(audio_bytes)} bytes to server...")
 
-    async def transcribe(
-        self,
-        audio_path: str | Path,
-        language: str | None = None,
-    ) -> TranscriptResult:
-        """
-        오디오 파일 전사
+        # 4. Riva 서버로 전송 (Blocking 방지를 위해 스레드로 실행)
+        # offline_recognize는 gRPC를 통해 대용량 파일도 안정적으로 처리함
+        try:
+            response = await asyncio.to_thread(
+                self.asr_service.offline_recognize, 
+                audio_bytes, 
+                self.config
+            )
+        except Exception as e:
+            print(f"[Riva Error] {str(e)}")
+            raise
 
-        Args:
-            audio_path: 오디오 파일 경로
-            language: 언어 코드 (None이면 자동 감지)
+        # 5. 결과 파싱
+        full_text = ""
+        segments = []
+        
+        if not response.results:
+            return TranscriptResult("", [], "ko-KR", 0.0)
 
-        Returns:
-            전사 결과 (타임스탬프 포함)
-        """
-        # TODO: Whisper 구현
-        # import whisper
-        #
-        # if self._model is None:
-        #     self._model = whisper.load_model(self.model_name)
-        #
-        # result = self._model.transcribe(
-        #     str(audio_path),
-        #     language=language,
-        #     word_timestamps=True,
-        # )
-        #
-        # segments = [
-        #     TranscriptSegment(
-        #         start=seg["start"],
-        #         end=seg["end"],
-        #         text=seg["text"],
-        #     )
-        #     for seg in result["segments"]
-        # ]
-        #
-        # return TranscriptResult(
-        #     full_text=result["text"],
-        #     segments=segments,
-        #     language=result["language"],
-        #     duration_sec=segments[-1].end if segments else 0.0,
-        # )
+        for result in response.results:
+            if not result.alternatives: continue
+            
+            alt = result.alternatives[0]
+            text_chunk = alt.transcript
+            full_text += text_chunk + " "
 
-        raise NotImplementedError("STT processing not yet implemented")
+            # 타임스탬프 추출 (ms -> sec 변환)
+            if alt.words:
+                start = alt.words[0].start_time / 1000.0
+                end = alt.words[-1].end_time / 1000.0
+                segments.append(TranscriptSegment(start, end, text_chunk.strip()))
 
-    async def transcribe_bytes(
-        self,
-        audio_bytes: bytes,
-        language: str | None = None,
-    ) -> TranscriptResult:
-        """
-        오디오 바이트 데이터 전사
-
-        Args:
-            audio_bytes: 오디오 바이트 데이터
-            language: 언어 코드
-
-        Returns:
-            전사 결과
-        """
-        raise NotImplementedError("STT from bytes not yet implemented")
+        duration = segments[-1].end if segments else 0.0
+        
+        return TranscriptResult(
+            full_text=full_text.strip(),
+            segments=segments,
+            language="ko-KR",
+            duration_sec=duration
+        )

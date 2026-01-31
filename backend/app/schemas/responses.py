@@ -9,19 +9,11 @@ from pydantic import BaseModel, Field
 # ==================== Video Responses ====================
 
 
-class UploadUrlResponse(BaseModel):
-    """S3 Presigned Upload URL 응답"""
+class UploadResponse(BaseModel):
+    """파일 업로드 응답"""
 
     task_id: str = Field(..., description="작업 ID (UUID)")
-    upload_url: str = Field(..., description="S3 Presigned PUT URL")
-    expires_at: datetime = Field(..., description="URL 만료 시간")
-
-
-class ConfirmUploadResponse(BaseModel):
-    """업로드 완료 확인 응답"""
-
-    task_id: str = Field(..., description="작업 ID")
-    s3_key: str = Field(..., description="S3 객체 키")
+    file_url: str = Field(..., description="파일 URL (정적 경로)")
     status: Literal["uploaded"] = Field(..., description="상태")
 
 

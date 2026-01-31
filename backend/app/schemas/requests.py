@@ -6,15 +6,15 @@ from pydantic import BaseModel, Field
 # ==================== Video Requests ====================
 
 
-class UploadUrlRequest(BaseModel):
-    """S3 Presigned Upload URL 요청"""
+class VideoUrlRequest(BaseModel):
+    """URL 비디오 다운로드 요청"""
 
-    filename: str = Field(..., description="파일명", examples=["lecture.mp4"])
-    content_type: str = Field(
-        default="video/mp4",
-        description="MIME 타입",
-        examples=["video/mp4", "video/webm"],
+    url: str = Field(..., description="비디오 URL (YouTube 등)", examples=["https://youtu.be/example"])
+    sos_timestamps: list[float] = Field(
+        default_factory=list,
+        description="SOS 요청 타임스탬프 목록 (초)",
     )
+
 
 
 class ProcessingOptions(BaseModel):

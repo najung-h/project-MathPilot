@@ -13,18 +13,17 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore",  # 정의되지 않은 환경 변수 무시
     )
 
     # ==================== API Keys ====================
     OPENAI_API_KEY: str = ""
     GOOGLE_API_KEY: str | None = None
+    NVIDIA_API_KEY: str = ""
 
-    # ==================== AWS S3 설정 ====================
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_REGION: str = "ap-northeast-2"
-    S3_BUCKET_NAME: str = ""
-    S3_PRESIGNED_URL_EXPIRY: int = 3600  # 1시간
+    # ==================== Local Storage 설정 ====================
+    STORAGE_PATH: str = "storage"  # 파일 저장 루트 디렉토리
+    BASE_URL: str = "http://localhost:8000"  # 정적 파일 서빙용 Base URL
 
     # ==================== Processing Options ====================
     FRAME_INTERVAL_SEC: float = 1.0  # 프레임 추출 간격 (초)
@@ -32,9 +31,9 @@ class Settings(BaseSettings):
     AUDIO_PADDING_SEC: float = 5.0  # 오디오 싱크 패딩 (초)
 
     # ==================== LLM Settings ====================
-    LLM_PROVIDER: Literal["openai", "gemini"] = "openai"
-    LLM_MODEL: str = "gpt-4o"
-    LLM_VISION_MODEL: str = "gpt-4o"  # Vision LLM for OCR
+    LLM_PROVIDER: Literal["openai", "gemini", "nvidia"] = "nvidia"
+    LLM_MODEL: str = "meta/llama-3.3-70b-instruct"
+    LLM_VISION_MODEL: str = "meta/llama-3.2-90b-vision-instruct"  # Vision LLM for OCR
     LLM_TEMPERATURE: float = 0.3
     LLM_MAX_TOKENS: int = 4096
 

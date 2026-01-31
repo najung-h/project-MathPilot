@@ -1,8 +1,10 @@
 """FastAPI Application Entry Point"""
 
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import video, note
@@ -13,6 +15,8 @@ from app.config import settings
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     # Startup
+    # 스토리지 디렉토리 생성
+    os.makedirs(settings.STORAGE_PATH, exist_ok=True)
     yield
     # Shutdown
 
@@ -32,6 +36,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 정적 파일 서빙 (로컬 스토리지용)
+app.mount("/static", StaticFiles(directory=settings.STORAGE_PATH), name="static")
 
 # 라우터 등록
 app.include_router(video.router, prefix="/api/v1/videos", tags=["videos"])
