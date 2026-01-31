@@ -70,13 +70,22 @@ async def fetch_video_url(
     settings: SettingsDep,
 ):
     """URL에서 비디오 다운로드 및 처리 시작"""
+    # URL 기본 검증
+    from fastapi import HTTPException
+    url = request.url.strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="Invalid URL format. URL must start with http:// or https://")
+    
+    if "error" in url.lower() or "traceback" in url.lower() or len(url) > 500:
+        raise HTTPException(status_code=400, detail="Invalid URL: appears to be malformed or error message")
+    
     task_id = str(uuid.uuid4())
     
     # 초기 Task 생성
     _task_store[task_id] = {
         "status": "pending", # 다운로드 대기/진행 중
         "s3_key": None,
-        "filename": request.url,
+        "filename": url,
         "created_at": datetime.now(timezone.utc),
         "progress": {"vision": 0.0, "audio": 0.0, "synthesis": 0.0},
         "error_message": None,

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     # ==================== Local Storage 설정 ====================
     STORAGE_PATH: str = "storage"  # 파일 저장 루트 디렉토리
     BASE_URL: str = "http://localhost:8000"  # 정적 파일 서빙용 Base URL
+    S3_PRESIGNED_URL_EXPIRY: int = 3600  # Presigned URL 만료 시간 (초), 기본 1시간
 
     # ==================== Processing Options ====================
     FRAME_INTERVAL_SEC: float = 1.0  # 프레임 추출 간격 (초)
@@ -41,7 +42,7 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "base"  # tiny, base, small, medium, large
 
     # ==================== CORS ====================
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
 
 
 @lru_cache

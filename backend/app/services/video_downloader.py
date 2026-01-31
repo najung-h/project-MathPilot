@@ -41,6 +41,19 @@ class VideoDownloader:
             "noplaylist": True,
             "quiet": True,
             "no_warnings": True,
+            # YouTube 403 오류 해결을 위한 옵션
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-us,en;q=0.5",
+                "Sec-Fetch-Mode": "navigate",
+            },
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android", "web"],
+                    "skip": ["hls", "dash"],
+                }
+            },
             # FFmpeg가 설치되어 있어야 함
             "postprocessors": [{
                 "key": "FFmpegVideoConvertor",
