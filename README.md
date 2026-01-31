@@ -1,4 +1,4 @@
-# project-mathnote
+# MathPilot
 
 
 
@@ -34,7 +34,11 @@
 2. **Interactive Deep-Dive:** 이해가 안 가는 구간(SOS)은 AI가 **'과외 선생님'**처럼 심층 해설 제공.
 3. **Searchable Knowledge:** 모든 영상 콘텐츠를 구조화된 Markdown($\LaTeX$)으로 변환하여 검색 및 2차 가공(Notion, PDF) 용이.
 
+### AS IS vs TO BE
 
+강의자료, 받아적은 노트, 따로 찾아본 gpt : 복잡해 죽겠네
+
+통합 단권화 노트 -> 노션으로 간단하게 export ! : 너무 편하다.
 
 
 

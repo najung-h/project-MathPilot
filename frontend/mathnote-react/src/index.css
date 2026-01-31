@@ -11,7 +11,7 @@ body {
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #db2777 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -24,9 +24,29 @@ body {
   background-size: 30px 30px;
 }
 
-/* Parallel Line (Tech Section) */
-.parallel-line {
-  background: linear-gradient(to bottom, #3b82f6 0%, #3b82f6 40%, #8b5cf6 60%, #8b5cf6 100%);
+/* Engine Connector (중앙 라인) */
+.engine-connector {
+  background: linear-gradient(to bottom, #e2e8f0 0%, #4f46e5 15%, #9333ea 85%, #e2e8f0 100%);
+}
+
+/* Tech Badge */
+.tech-badge {
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Card Hover */
+.card-hover {
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.card-hover:hover {
+  transform: translateY(-8px) scale(1.02);
 }
 
 /* Glass Morphism */

@@ -4,66 +4,40 @@
 
 export function ProblemSection() {
   return (
-    <section id="problem" className="py-40 bg-slate-900 text-white relative overflow-hidden">
-      {/* Background Effect */}
-      <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-600/10 blur-[120px]" />
-      
+    <section id="overview" className="py-40 bg-slate-900 text-white relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-24 items-center">
-          {/* Left Content */}
           <div>
-            <h2 className="text-5xl md:text-6xl font-black mb-12 tracking-tight">
-              필기는 더 이상
-              <br />
-              <span className="text-blue-500">학습</span>이 아닙니다.
-            </h2>
-            
+            <h2 className="text-5xl md:text-6xl font-black mb-12 tracking-tight italic">기록하느라 놓쳐버린<br /><span className="text-indigo-400 italic">교수님의 Insight</span></h2>
             <div className="space-y-12">
-              {/* Problem 1 */}
               <div className="flex gap-6">
-                <div className="text-4xl">🤯</div>
+                <div className="text-4xl text-indigo-400">01</div>
                 <div>
-                  <h4 className="text-2xl font-bold mb-2 text-slate-100">
-                    인지 부하의 한계
-                  </h4>
-                  <p className="text-slate-400 text-lg leading-relaxed">
-                    수식과 도표를 옮겨 적는 단순 노동 때문에 교수님의 고차원적인 통찰(Insight)을 놓칩니다.
-                  </p>
+                  <h4 className="text-2xl font-bold mb-2 text-slate-100 uppercase tracking-tighter">멀티태스킹의 한계</h4>
+                  <p className="text-slate-400 text-lg leading-relaxed font-medium">복잡한 수식을 옮겨 적다 정작 중요한 개념 설명을 놓친 적이 한두 번이 아닙니다.</p>
                 </div>
               </div>
-              
-              {/* Problem 2 */}
               <div className="flex gap-6">
-                <div className="text-4xl">⏳</div>
+                <div className="text-4xl text-indigo-400">02</div>
                 <div>
-                  <h4 className="text-2xl font-bold mb-2 text-slate-100">
-                    파편화된 복습 시간
-                  </h4>
-                  <p className="text-slate-400 text-lg leading-relaxed">
-                    특정 개념을 찾기 위해 영상을 10초씩 앞뒤로 돌려보는 비효율적인 시간이 학습 시간의 40%를 차지합니다.
-                  </p>
+                  <h4 className="text-2xl font-bold mb-2 text-slate-100 uppercase tracking-tighter">파편화된 복습 시간</h4>
+                  <p className="text-slate-400 text-lg leading-relaxed font-medium">"그 예시가 뭐였지?" 영상을 하염없이 돌려보며 낭비하는 시간이 학습 시간의 40%입니다.</p>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Right Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-64 bg-slate-800 rounded-3xl border border-slate-700 p-8 flex flex-col justify-end">
-              <p className="text-4xl font-black text-blue-500 mb-2">82%</p>
-              <p className="text-sm font-bold text-slate-400 leading-tight">
-                학생들이 필기 때문에
-                <br />
-                설명을 놓친 경험이 있음
+          <div className="relative">
+            <div className="bg-indigo-600/20 p-12 rounded-[3.5rem] border border-indigo-500/30 backdrop-blur-xl">
+              <p className="text-2xl font-medium leading-relaxed italic text-left">
+                "전공 수업부터 기술 컨퍼런스까지,<br /> 
+                <span className="text-indigo-400 font-black text-3xl underline underline-offset-8">수식과 도표</span>가 많은 모든 곳에<br /> 
+                필요한 유일한 솔루션입니다."
               </p>
-            </div>
-            <div className="h-64 bg-slate-800 rounded-3xl border border-slate-700 p-8 mt-12 flex flex-col justify-end">
-              <p className="text-4xl font-black text-purple-500 mb-2">15분</p>
-              <p className="text-sm font-bold text-slate-400 leading-tight">
-                1시간 강의에서 필기 내용을
-                <br />
-                정리하는 데 걸리는 추가 시간
-              </p>
+              <div className="mt-8 flex gap-4 justify-start">
+                <span className="px-5 py-2.5 bg-slate-800 rounded-full text-xs font-black text-indigo-300">#공대생</span>
+                <span className="px-5 py-2.5 bg-slate-800 rounded-full text-xs font-black text-indigo-300">#개발자</span>
+                <span className="px-5 py-2.5 bg-slate-800 rounded-full text-xs font-black text-indigo-300">#수학전공</span>
+              </div>
             </div>
           </div>
         </div>
