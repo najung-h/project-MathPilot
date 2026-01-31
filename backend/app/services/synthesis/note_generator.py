@@ -102,13 +102,16 @@ class NoteGenerator:
 
     async def _generate_content(self, prompt: PromptContext) -> str:
         """LLM으로 콘텐츠 생성"""
+        from app.utils.text_cleaner import clean_hallucinations
+
         response = await self.llm_client.chat(
             messages=[
                 {"role": "system", "content": prompt.system_prompt},
                 {"role": "user", "content": prompt.user_prompt},
             ]
         )
-        return response
+        # 환각(반복 패턴) 제거
+        return clean_hallucinations(response)
 
     def _build_markdown(
         self,

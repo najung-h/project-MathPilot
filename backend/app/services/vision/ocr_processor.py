@@ -112,30 +112,9 @@ $$
         return results
 
     def _clean_hallucinations(self, text: str) -> str:
-        """
-        LLM 환각으로 인한 반복 텍스트/수식 제거
-        예: \begin{array}{c}가 5회 이상 반복되는 경우 등
-        """
-        # 1. 과도한 중첩 구조 제거 (\begin{array}{c}가 3회 이상 연속 중첩되면 삭제)
-        # 정규식: (\begin{array}{c}\s*){3,} -> 제거 또는 단순화
-        # 하지만 정규식으로는 중첩 괄호 처리가 어려우므로, 단순 반복 패턴만 잡음
-        
-        # 특정 키워드가 너무 많이 반복되면 해당 줄을 잘라냄
-        lines = text.split('\n')
-        cleaned_lines = []
-        for line in lines:
-            # \begin{array}가 한 줄에 3번 이상 나오거나, 전체적으로 너무 긴 줄은 의심
-            if line.count(r'\begin{array}') > 3:
-                continue
-            
-            # \begin{array}{c} 패턴의 무한 반복 감지
-            if len(line) > 500 and r'\begin{array}' in line:
-                 # 너무 긴 수식 줄은 환각일 가능성이 높으므로 스킵 (안전장치)
-                 continue
-                 
-            cleaned_lines.append(line)
-            
-        return '\n'.join(cleaned_lines)
+        """LLM 환각으로 인한 반복 텍스트/수식 제거"""
+        from app.utils.text_cleaner import clean_hallucinations
+        return clean_hallucinations(text)
 
     def _extract_latex(self, markdown_text: str) -> list[str]:
         """
