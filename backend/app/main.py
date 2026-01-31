@@ -10,13 +10,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import video, note
 from app.config import settings
 
+# 스토리지 디렉토리 사전 생성 (StaticFiles 마운트 전에 필요)
+os.makedirs(settings.STORAGE_PATH, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     # Startup
-    # 스토리지 디렉토리 생성
-    os.makedirs(settings.STORAGE_PATH, exist_ok=True)
     yield
     # Shutdown
 

@@ -4,10 +4,10 @@
 
 import { useEffect, useRef } from 'react';
 import katex from 'katex';
-import type { SlideData } from '@/types';
+import type { SlideData, NoteResponse } from '@/types';
 
 interface NotePreviewProps {
-  slides?: SlideData[];
+  noteData?: NoteResponse | null;
   isLoading?: boolean;
 }
 
@@ -24,11 +24,15 @@ const DEMO_SLIDES: SlideData[] = [
   },
 ];
 
-export function NotePreview({ slides = DEMO_SLIDES, isLoading = false }: NotePreviewProps) {
+export function NotePreview({ noteData, isLoading = false }: NotePreviewProps) {
   const equationRef = useRef<HTMLDivElement>(null);
+  
+  // noteData가 있으면 그것을 사용, 없으면 null
+  const slides = noteData?.slides;
+  const title = noteData?.title || 'Lecture Summary';
 
   useEffect(() => {
-    if (equationRef.current && slides.length > 0) {
+    if (equationRef.current && slides && slides.length > 0) {
       try {
         katex.render(slides[0].ocr_content, equationRef.current, {
           throwOnError: false,
@@ -46,9 +50,11 @@ export function NotePreview({ slides = DEMO_SLIDES, isLoading = false }: NotePre
         <span className="text-sm font-bold text-slate-700">
           생성된 단권화 노트 Preview
         </span>
-        <button className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition">
-          Export to Notion
-        </button>
+        {noteData && (
+          <button className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition">
+            Export to Notion
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -60,48 +66,51 @@ export function NotePreview({ slides = DEMO_SLIDES, isLoading = false }: NotePre
               <p className="text-slate-500">노트 생성 중...</p>
             </div>
           </div>
+        ) : !noteData ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center text-slate-400">
+              <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p className="text-sm">강의 분석이 완료되면 노트가 표시됩니다</p>
+            </div>
+          </div>
         ) : (
           <>
             <h1 className="text-2xl font-bold border-b pb-4">
-              Lecture Summary: Eigenvalues
+              {title}
             </h1>
 
-            <h3 className="mt-6 text-blue-600">1. 핵심 수식 (OCR 추출)</h3>
-            <div className="bg-slate-50 p-4 rounded-xl my-4 text-center">
-              <div ref={equationRef} className="text-xl italic" />
-            </div>
-
-            <h3 className="mt-6">2. 강의 요약</h3>
-            <ul className="list-disc ml-5 space-y-2 text-slate-600 text-sm">
-              <li>
-                {slides[0]?.audio_summary}
-              </li>
-              <li>
-                특성방정식 det(A - λI) = 0을 통해 λ를 산출함.
-              </li>
-            </ul>
-
-            {/* SOS Explanation */}
-            {slides[0]?.sos_explanation && (
-              <div className="mt-8 p-5 bg-amber-50 border border-amber-200 rounded-xl relative">
-                <div className="absolute -top-3 left-4 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                  💡 AI 심층 해설 (SOS)
+            {slides && slides.length > 0 && (
+              <>
+                <h3 className="mt-6 text-blue-600">1. 핵심 수식 (OCR 추출)</h3>
+                <div className="bg-slate-50 p-4 rounded-xl my-4 text-center">
+                  <div ref={equationRef} className="text-xl italic" />
                 </div>
-                <p className="text-xs font-semibold text-amber-800 mb-2">
-                  "05:23 구간 질문에 대한 해설입니다"
-                </p>
-                <p className="text-sm text-amber-700 leading-relaxed">
-                  {slides[0].sos_explanation}
-                </p>
-              </div>
-            )}
 
-            {/* Loading Placeholder */}
-            <div className="mt-8 flex justify-center opacity-30">
-              <div className="w-full h-32 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center">
-                다음 슬라이드 분석 중...
-              </div>
-            </div>
+                <h3 className="mt-6">2. 강의 요약</h3>
+                <ul className="list-disc ml-5 space-y-2 text-slate-600 text-sm">
+                  <li>
+                    {slides[0]?.audio_summary}
+                  </li>
+                </ul>
+
+                {/* SOS Explanation */}
+                {slides[0]?.sos_explanation && (
+                  <div className="mt-8 p-5 bg-amber-50 border border-amber-200 rounded-xl relative">
+                    <div className="absolute -top-3 left-4 bg-amber-400 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                      💡 AI 심층 해설 (SOS)
+                    </div>
+                    <p className="text-xs font-semibold text-amber-800 mb-2">
+                      "SOS 구간 질문에 대한 해설입니다"
+                    </p>
+                    <p className="text-sm text-amber-700 leading-relaxed">
+                      {slides[0].sos_explanation}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
           </>
         )}
       </div>

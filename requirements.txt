@@ -1,3 +1,8 @@
 # conda create -n mathnote python=3.11
 # conda activate mathnote
 yt-dlp
+aiofiles
+scikit-image
+Riva
+nvidia-riva-client
+python-multipart

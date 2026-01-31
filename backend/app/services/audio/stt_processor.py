@@ -2,7 +2,15 @@ import os
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-import riva.client
+
+# Riva client는 선택적 의존성으로 처리 (NVIDIA Cloud 환경에서만 사용)
+try:
+    import riva.client
+    RIVA_AVAILABLE = True
+except ImportError:
+    RIVA_AVAILABLE = False
+    riva = None  # type: ignore
+
 from app.config import settings
 
 @dataclass
@@ -20,6 +28,13 @@ class TranscriptResult:
 
 class STTProcessor:
     def __init__(self):
+        if not RIVA_AVAILABLE:
+            print("[Warning] NVIDIA Riva client not available. STT will be disabled.")
+            self.auth = None
+            self.asr_service = None
+            self.config = None
+            return
+            
         # 1. NVIDIA Riva 서버 연결 (gRPC)
         self.auth = riva.client.Auth(
             None,
@@ -44,6 +59,15 @@ class STTProcessor:
         )
 
     async def transcribe(self, audio_path: str | Path) -> TranscriptResult:
+        if not RIVA_AVAILABLE or self.asr_service is None:
+            # Riva가 없으면 빈 결과 반환
+            return TranscriptResult(
+                full_text="[STT unavailable - Riva client not installed]",
+                segments=[],
+                language="ko-KR",
+                duration_sec=0.0
+            )
+            
         audio_path = Path(audio_path)
         
         # 3. 파일 읽기 (바이너리)

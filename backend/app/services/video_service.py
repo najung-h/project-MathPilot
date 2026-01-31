@@ -232,7 +232,7 @@ class VideoProcessingService:
         # 4. 전체 대본(Transcript) JSON 저장
         import json
         transcript_data = {
-            "full_text": transcript_result.text,
+            "full_text": transcript_result.full_text,
             "segments": [
                 {
                     "start": s.start,

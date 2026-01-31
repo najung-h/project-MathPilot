@@ -6,13 +6,20 @@ import { Logo, Button } from '@/components/common';
 
 interface MainHeaderProps {
   onUploadClick: () => void;
+  onLogoClick?: () => void;
 }
 
-export function MainHeader({ onUploadClick }: MainHeaderProps) {
+export function MainHeader({ onUploadClick, onLogoClick }: MainHeaderProps) {
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-200 glass-morphism">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Logo size="md" />
+        <div 
+          onClick={onLogoClick}
+          className="cursor-pointer transition-opacity hover:opacity-80"
+          title="Welcome 페이지로 돌아가기"
+        >
+          <Logo size="md" />
+        </div>
         
         <div className="flex items-center gap-4">
           <Button variant="ghost" className="rounded-full">

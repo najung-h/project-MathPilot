@@ -12,7 +12,7 @@ type UploadMode = 'file' | 'url';
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess?: (taskId: string) => void;
+  onUploadSuccess?: (taskId: string, uploadType: 'file' | 'url', fileExtension?: string, youtubeUrl?: string) => void;
 }
 
 export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalProps) {
@@ -82,6 +82,9 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
         // 파일 업로드
         const uploadResponse = await videoService.uploadFile(selectedFile);
         
+        // 파일 확장자 추출
+        const extension = selectedFile.name.split('.').pop() || 'mp4';
+        
         // 처리 시작
         await videoService.processVideo(uploadResponse.task_id, {
           options: {
@@ -90,22 +93,34 @@ export function UploadModal({ isOpen, onClose, onUploadSuccess }: UploadModalPro
           },
         });
         
-        onUploadSuccess?.(uploadResponse.task_id);
+        onUploadSuccess?.(uploadResponse.task_id, 'file', extension);
       } else if (mode === 'url' && youtubeUrl) {
+        // URL 유효성 검사
+        const trimmedUrl = youtubeUrl.trim();
+        if (!trimmedUrl.startsWith('http://') && !trimmedUrl.startsWith('https://')) {
+          setError('올바른 URL 형식이 아닙니다. http:// 또는 https://로 시작해야 합니다.');
+          setIsUploading(false);
+          return;
+        }
+
         // URL에서 영상 가져오기
         const response = await videoService.fetchFromUrl({
-          url: youtubeUrl,
+          url: trimmedUrl,
           sos_timestamps: [],
         });
         
-        onUploadSuccess?.(response.task_id);
+        onUploadSuccess?.(response.task_id, 'url', undefined, trimmedUrl);
       }
       
       // 모달 닫기 및 상태 초기화
       handleClose();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload error:', err);
-      setError('업로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+      // 에러 메시지를 깔끔하게 추출
+      const errorMessage = err?.response?.data?.detail || 
+                          err?.message || 
+                          '업로드 중 오류가 발생했습니다. 다시 시도해주세요.';
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }
