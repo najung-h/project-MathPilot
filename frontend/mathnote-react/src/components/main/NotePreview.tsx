@@ -2,6 +2,7 @@
  * Main Page - 노트 프리뷰 섹션
  */
 
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -15,6 +16,8 @@ interface NotePreviewProps {
 }
 
 export function NotePreview({ noteData, isLoading = false, filename }: NotePreviewProps) {
+  const [activeTab, setActiveTab] = useState<'preview' | 'original'>('preview');
+  
   // noteData가 있으면 그것을 사용, 없으면 null
   const slides = noteData?.slides;
   
@@ -23,16 +26,37 @@ export function NotePreview({ noteData, isLoading = false, filename }: NotePrevi
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)]">
-      {/* Header */}
-      <div className="bg-white rounded-t-2xl p-4 border-t border-x border-slate-200 flex justify-between items-center bg-slate-50">
-        <span className="text-sm font-bold text-slate-700">
-          생성된 단권화 노트 Preview
-        </span>
-        {noteData && (
-          <button className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition">
-            Export to Notion
-          </button>
-        )}
+      {/* Header with Tabs */}
+      <div className="bg-white rounded-t-2xl border-t border-x border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('preview')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === 'preview'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'bg-white text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              📝 생성된 단권화 노트
+            </button>
+            <button
+              onClick={() => setActiveTab('original')}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                activeTab === 'original'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'bg-white text-slate-600 hover:bg-slate-100'
+              }`}
+            >
+              🎬 원본 자료
+            </button>
+          </div>
+          {noteData && (
+            <button className="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-md shadow-sm hover:shadow-md transition">
+              Export to Notion
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -53,7 +77,8 @@ export function NotePreview({ noteData, isLoading = false, filename }: NotePrevi
               <p className="text-sm">강의 분석이 완료되면 노트가 표시됩니다</p>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'preview' ? (
+          // 생성된 단권화 노트
           <>
             <h1 className="text-2xl font-bold border-b pb-4">
               {title}
@@ -113,6 +138,56 @@ export function NotePreview({ noteData, isLoading = false, filename }: NotePrevi
                 {/* 슬라이드 구분선 */}
                 {index < slides.length - 1 && (
                   <hr className="my-8 border-slate-200" />
+                )}
+              </div>
+            ))}
+          </>
+        ) : (
+          // 원본 자료 (Original Output)
+          <>
+            <h1 className="text-2xl font-bold border-b pb-4">
+              {title} - 원본 자료
+            </h1>
+
+            {slides && slides.length > 0 && slides.map((slide, index) => (
+              <div key={`original-${slide.slide_number}`} className="mb-8">
+                <h2 className="text-xl font-bold text-slate-800 mt-8 mb-4 flex items-center gap-2">
+                  <span className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm">
+                    슬라이드 {slide.slide_number}
+                  </span>
+                  <span className="text-sm text-slate-500 font-normal">
+                    {Math.floor(slide.timestamp_start / 60)}:{String(Math.floor(slide.timestamp_start % 60)).padStart(2, '0')} - {Math.floor(slide.timestamp_end / 60)}:{String(Math.floor(slide.timestamp_end % 60)).padStart(2, '0')}
+                  </span>
+                </h2>
+
+                {/* 슬라이드 이미지 */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-slate-600 mb-2">📸 슬라이드 이미지</h3>
+                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                    <img 
+                      src={slide.image_url} 
+                      alt={`Slide ${slide.slide_number}`}
+                      className="w-full h-auto"
+                      onError={(e) => {
+                        e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="%23f1f5f9"/><text x="50%" y="50%" font-size="20" fill="%2364748b" text-anchor="middle" dominant-baseline="middle">이미지를 불러올 수 없습니다</text></svg>';
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* STT 원본 텍스트 */}
+                <div className="mb-6">
+                  <h3 className="text-sm font-semibold text-slate-600 mb-2">🎤 음성 전사 원본 (STT)</h3>
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+                      {slide.raw_transcript || '음성 전사 데이터가 없습니다.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 슬라이드 구분선 */}
+                {index < slides.length - 1 && (
+                  <hr className="my-8 border-slate-300" />
                 )}
               </div>
             ))}

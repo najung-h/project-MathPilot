@@ -54,7 +54,48 @@ class SegmentMapper:
         """
         sos_timestamps = sos_timestamps or []
         mapped_segments = []
+        
+        # STT fallback 케이스 감지: 단일 거대 세그먼트 (0.0, 999999.0)
+        is_fallback = (
+            len(transcript_segments) == 1 and 
+            transcript_segments[0].end > 900000  # 999999.0 같은 거대 값
+        )
+        
+        if is_fallback and slides:
+            # 전체 텍스트를 슬라이드 개수로 균등 분할
+            full_text = transcript_segments[0].text
+            words = full_text.split()
+            words_per_slide = max(1, len(words) // len(slides))
+            
+            for idx, (slide, ocr_result) in enumerate(zip(slides, ocr_results)):
+                # 각 슬라이드에 해당하는 단어 구간 추출
+                start_word_idx = idx * words_per_slide
+                end_word_idx = start_word_idx + words_per_slide if idx < len(slides) - 1 else len(words)
+                audio_transcript = " ".join(words[start_word_idx:end_word_idx])
+                
+                # SOS 처리 (fallback 모드에서는 해당 슬라이드 텍스트 사용)
+                sos_requested = False
+                sos_transcript = ""
+                for sos_ts in sos_timestamps:
+                    if slide.timestamp_start <= sos_ts <= slide.timestamp_end:
+                        sos_requested = True
+                        sos_transcript = audio_transcript  # 같은 구간 사용
+                        break
+                
+                mapped_segments.append(
+                    MappedSegment(
+                        slide_number=slide.slide_number,
+                        timestamp_start=slide.timestamp_start,
+                        timestamp_end=slide.timestamp_end,
+                        ocr_content=ocr_result.structured_markdown,
+                        audio_transcript=audio_transcript,
+                        sos_requested=sos_requested,
+                        sos_transcript=sos_transcript,
+                    )
+                )
+            return mapped_segments
 
+        # 정상 케이스: 타임스탬프 기반 매핑
         for slide, ocr_result in zip(slides, ocr_results):
             # 슬라이드 구간 (패딩 적용)
             start = max(0, slide.timestamp_start - self.padding_sec)

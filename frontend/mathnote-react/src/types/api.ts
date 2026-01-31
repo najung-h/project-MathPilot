@@ -70,6 +70,7 @@ export interface SlideData {
   image_url: string;
   ocr_content: string;
   audio_summary: string;
+  raw_transcript: string;
   sos_explanation?: string;
 }
 

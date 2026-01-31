@@ -59,6 +59,7 @@ class SlideDetail(BaseModel):
     image_url: str = Field(..., description="슬라이드 이미지 URL (Presigned)")
     ocr_content: str = Field(..., description="OCR 결과 (LaTeX 포함 마크다운)")
     audio_summary: str = Field(..., description="해당 구간 음성 요약")
+    raw_transcript: str = Field(..., description="원본 STT 전사 텍스트")
     sos_explanation: str | None = Field(None, description="SOS 심층 해설")
 
 

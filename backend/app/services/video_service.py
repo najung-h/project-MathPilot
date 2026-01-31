@@ -318,6 +318,7 @@ class VideoProcessingService:
                     "image_s3_key": s.image_s3_key,
                     "ocr_content": segments[i].ocr_content,  # OCR 원본 (수식)
                     "audio_summary": s.summary_content,  # LLM 생성 요약
+                    "raw_transcript": segments[i].audio_transcript,  # STT 원본 전사
                     "sos_explanation": s.sos_explanation,
                 }
                 for i, s in enumerate(note.slides)
